@@ -295,13 +295,16 @@ public class BluetoothChatFragment extends Fragment {
                 });
             }
 
+            /*
             myHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     mChatService.start();
                 }
             },200);
+            */
 
+            mChatService.start();
         }
     }
 
