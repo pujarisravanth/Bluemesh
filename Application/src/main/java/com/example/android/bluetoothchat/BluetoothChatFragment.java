@@ -44,6 +44,8 @@ import android.widget.Toast;
 
 import com.example.android.common.logger.Log;
 
+import java.util.ArrayList;
+
 /**
  * This fragment controls Bluetooth to communicate with other devices.
  */
@@ -55,11 +57,16 @@ public class BluetoothChatFragment extends Fragment {
     private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
     private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
     private static final int REQUEST_ENABLE_BT = 3;
+    private static final int REQUEST_DEVICE_LIST = 4;
 
     // Layout Views
     private ListView mConversationView;
     private EditText mOutEditText;
     private Button mSendButton;
+
+    private MultiConnectThread multiConnectThread;
+    public ArrayList<String> dev_list;
+    private static Handler myHandler = new Handler();
 
     /**
      * Name of the connected device
@@ -175,7 +182,12 @@ public class BluetoothChatFragment extends Fragment {
                 if (null != view) {
                     TextView textView = (TextView) view.findViewById(R.id.edit_text_out);
                     String message = textView.getText().toString();
-                    sendMessage(message);
+                    if(Constants.mode_1){
+                        if(multiConnectThread != null) multiConnectThread = null;
+                        multiConnectThread = new MultiConnectThread(message);
+                        multiConnectThread.start();
+                    }
+                    else sendMessage(message);
                 }
             }
         });
@@ -204,7 +216,7 @@ public class BluetoothChatFragment extends Fragment {
      *
      * @param message A string of text to send.
      */
-    private void sendMessage(String message) {
+    public synchronized void sendMessage(String message) {
         // Check that we're actually connected before trying anything
         if (mChatService.getState() != BluetoothChatService.STATE_CONNECTED) {
             Toast.makeText(getActivity(), R.string.not_connected, Toast.LENGTH_SHORT).show();
@@ -221,6 +233,76 @@ public class BluetoothChatFragment extends Fragment {
             mOutStringBuffer.setLength(0);
             mOutEditText.setText(mOutStringBuffer);
         }
+
+        /*
+        if (message.length() > 0) {
+            String address = dev_list.get(0);
+            BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+            // Attempt to connect to the device
+            mChatService.connect(device, true);
+
+            final byte[] send = message.getBytes();
+
+            for(String address : dev_list){
+                BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+                mChatService.connect(device, true);
+                Log.i(TAG,"connected to "+address);
+                //while(mChatService.getState() != BluetoothChatService.STATE_CONNECTED){}
+
+                mChatService.write(send);
+                mChatService.start();
+            }
+
+
+            // Reset out string buffer to zero and clear the edit text field
+            mOutStringBuffer.setLength(0);
+            mOutEditText.setText(mOutStringBuffer);
+        }
+        */
+    }
+
+    private class MultiConnectThread extends Thread{
+        private String msg = "No message";
+
+        private MultiConnectThread(String message){
+            msg = message;
+        }
+
+        public void run(){
+            Log.i(TAG,"In MultiConnectThread");
+            Log.i(TAG,msg);
+
+            synchronized (BluetoothChatFragment.this){
+                multiConnectThread = null;
+            }
+
+            String address = dev_list.get(0);
+            connectDevice(address,true);
+
+            while(mChatService.getState() != BluetoothChatService.STATE_CONNECTED){}
+
+            if (msg.length() > 0) {
+                // Get the message bytes and tell the BluetoothChatService to write
+                byte[] send = msg.getBytes();
+                mChatService.write(send);
+
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mOutStringBuffer.setLength(0);
+                        mOutEditText.setText(mOutStringBuffer);
+                    }
+                });
+            }
+
+            myHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mChatService.start();
+                }
+            },200);
+
+        }
     }
 
     /**
@@ -232,7 +314,13 @@ public class BluetoothChatFragment extends Fragment {
             // If the action is a key-up event on the return key, send the message
             if (actionId == EditorInfo.IME_NULL && event.getAction() == KeyEvent.ACTION_UP) {
                 String message = view.getText().toString();
-                sendMessage(message);
+                //sendMessage(message);
+                if(Constants.mode_1){
+                    if(multiConnectThread != null) multiConnectThread = null;
+                    multiConnectThread = new MultiConnectThread(message);
+                    multiConnectThread.start();
+                }
+                else sendMessage(message);
             }
             return true;
         }
@@ -284,7 +372,7 @@ public class BluetoothChatFragment extends Fragment {
                     switch (msg.arg1) {
                         case BluetoothChatService.STATE_CONNECTED:
                             setStatus(getString(R.string.title_connected_to, mConnectedDeviceName));
-                            mConversationArrayAdapter.clear();
+                            //mConversationArrayAdapter.clear();
                             break;
                         case BluetoothChatService.STATE_CONNECTING:
                             setStatus(R.string.title_connecting);
@@ -351,6 +439,20 @@ public class BluetoothChatFragment extends Fragment {
                             Toast.LENGTH_SHORT).show();
                     getActivity().finish();
                 }
+            case REQUEST_DEVICE_LIST:
+                if (resultCode == Activity.RESULT_OK) {
+                    dev_list = data.getStringArrayListExtra("device list");
+                    Log.i(TAG,"After activity : ");
+                    for(String a : dev_list){
+                        Log.i(TAG,a);
+                    }
+                    /*
+                    String address = dev_list.get(0);
+                    BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+                    // Attempt to connect to the device
+                    mChatService.connect(device, true);
+                    */
+                }
         }
     }
 
@@ -364,6 +466,14 @@ public class BluetoothChatFragment extends Fragment {
         // Get the device MAC address
         String address = data.getExtras()
                 .getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
+        // Get the BluetoothDevice object
+        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+        // Attempt to connect to the device
+        mChatService.connect(device, secure);
+    }
+
+    private void connectDevice(String address, boolean secure){
+
         // Get the BluetoothDevice object
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
         // Attempt to connect to the device
@@ -395,8 +505,18 @@ public class BluetoothChatFragment extends Fragment {
                 ensureDiscoverable();
                 return true;
             }
+            case R.id.mode_1: {
+                // Enables first mode
+                Constants.mode_1 = !Constants.mode_1;
+                if(Constants.mode_1){
+                    Toast.makeText(getActivity(), "mode 1 is ON", Toast.LENGTH_SHORT).show();
+                    Intent serverIntent = new Intent(getActivity(), DeviceListActivity.class);
+                    startActivityForResult(serverIntent, REQUEST_DEVICE_LIST);
+                }
+                else Toast.makeText(getActivity(), "mode 1 is OFF", Toast.LENGTH_SHORT).show();
+                return true;
+            }
         }
         return false;
     }
-
 }

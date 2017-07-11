@@ -34,6 +34,8 @@ import android.widget.TextView;
 
 import com.example.android.common.logger.Log;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -64,6 +66,8 @@ public class DeviceListActivity extends Activity {
      */
     private ArrayAdapter<String> mNewDevicesArrayAdapter;
 
+    private BluetoothChatFragment btFragment;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -81,6 +85,7 @@ public class DeviceListActivity extends Activity {
             public void onClick(View v) {
                 doDiscovery();
                 v.setVisibility(View.GONE);
+                Constants.DEVICE_LIST = new ArrayList<String>();
             }
         });
 
@@ -133,7 +138,7 @@ public class DeviceListActivity extends Activity {
         // Make sure we're not doing discovery anymore
         if (mBtAdapter != null) {
             mBtAdapter.cancelDiscovery();
-        }
+        } 
 
         // Unregister broadcast listeners
         this.unregisterReceiver(mReceiver);
@@ -197,6 +202,25 @@ public class DeviceListActivity extends Activity {
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 // Get the BluetoothDevice object from the Intent
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                String a = device.getAddress();
+
+                if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
+                    Log.i(TAG, device.getName());
+                    //Constants.DEVICE_LIST.add(device.getAddress());
+
+                    if(Constants.DEVICE_LIST == null) Constants.DEVICE_LIST.add(a);
+                    else{
+                        boolean k = true;
+                        for(String b : Constants.DEVICE_LIST){
+                            if(b.equals(a)){
+                                k = false;
+                                break;
+                            }
+                        }
+                        if(k) Constants.DEVICE_LIST.add(a);
+                    }
+                }
+
                 // If it's already paired, skip it, because it's been listed already
                 if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
                     mNewDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
@@ -209,8 +233,24 @@ public class DeviceListActivity extends Activity {
                     String noDevices = getResources().getText(R.string.none_found).toString();
                     mNewDevicesArrayAdapter.add(noDevices);
                 }
+
+                Log.i(TAG,"Pinting devices : ");
+                for(String abc: Constants.DEVICE_LIST){
+                    Log.i(TAG,abc);
+                }
+
+                if(Constants.mode_1){
+                    Intent intent1 = new Intent();
+                    intent1.putStringArrayListExtra("device list",(ArrayList<String>) Constants.DEVICE_LIST);
+                    sendResult(intent1);
+                }
             }
         }
     };
+
+    public void sendResult(Intent intent){
+        setResult(Activity.RESULT_OK,intent);
+        finish();
+    }
 
 }

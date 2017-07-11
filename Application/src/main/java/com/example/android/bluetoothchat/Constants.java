@@ -16,10 +16,13 @@
 
 package com.example.android.bluetoothchat;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Defines several constants used between {@link BluetoothChatService} and the UI.
  */
-public interface Constants {
+public class Constants {
 
     // Message types sent from the BluetoothChatService Handler
     public static final int MESSAGE_STATE_CHANGE = 1;
@@ -32,4 +35,6 @@ public interface Constants {
     public static final String DEVICE_NAME = "device_name";
     public static final String TOAST = "toast";
 
+    public static boolean mode_1 = false;
+    public static List<String> DEVICE_LIST = new ArrayList<String>();
 }
