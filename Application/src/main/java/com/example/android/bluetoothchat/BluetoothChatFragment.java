@@ -67,6 +67,8 @@ public class BluetoothChatFragment extends Fragment {
     private MultiConnectThread multiConnectThread;
     public ArrayList<String> dev_list;
     private static Handler myHandler = new Handler();
+    String[] msg_buf = new String[10];
+    private static int idx = 0;
 
     /**
      * Name of the connected device
@@ -233,32 +235,6 @@ public class BluetoothChatFragment extends Fragment {
             mOutStringBuffer.setLength(0);
             mOutEditText.setText(mOutStringBuffer);
         }
-
-        /*
-        if (message.length() > 0) {
-            String address = dev_list.get(0);
-            BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-            // Attempt to connect to the device
-            mChatService.connect(device, true);
-
-            final byte[] send = message.getBytes();
-
-            for(String address : dev_list){
-                BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-                mChatService.connect(device, true);
-                Log.i(TAG,"connected to "+address);
-                //while(mChatService.getState() != BluetoothChatService.STATE_CONNECTED){}
-
-                mChatService.write(send);
-                mChatService.start();
-            }
-
-
-            // Reset out string buffer to zero and clear the edit text field
-            mOutStringBuffer.setLength(0);
-            mOutEditText.setText(mOutStringBuffer);
-        }
-        */
     }
 
     private class MultiConnectThread extends Thread{
@@ -276,24 +252,26 @@ public class BluetoothChatFragment extends Fragment {
                 multiConnectThread = null;
             }
 
-            String address = dev_list.get(0);
-            connectDevice(address,true);
+            for(String address : dev_list) {
+                //String address = dev_list.get(0);
+                connectDevice(address, true);
 
-            while(mChatService.getState() != BluetoothChatService.STATE_CONNECTED){}
+                while (mChatService.getState() != BluetoothChatService.STATE_CONNECTED) {
+                }
 
-            if (msg.length() > 0) {
-                // Get the message bytes and tell the BluetoothChatService to write
-                byte[] send = msg.getBytes();
-                mChatService.write(send);
+                if (msg.length() > 0) {
+                    // Get the message bytes and tell the BluetoothChatService to write
+                    byte[] send = msg.getBytes();
+                    mChatService.write(send);
 
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mOutStringBuffer.setLength(0);
-                        mOutEditText.setText(mOutStringBuffer);
-                    }
-                });
-            }
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mOutStringBuffer.setLength(0);
+                            mOutEditText.setText(mOutStringBuffer);
+                        }
+                    });
+                }
 
             /*
             myHandler.postDelayed(new Runnable() {
@@ -303,8 +281,10 @@ public class BluetoothChatFragment extends Fragment {
                 }
             },200);
             */
-
-            mChatService.start();
+                mChatService.start();
+                while (mChatService.getState() == BluetoothChatService.STATE_CONNECTED) {
+                }
+            }
         }
     }
 
@@ -397,6 +377,24 @@ public class BluetoothChatFragment extends Fragment {
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
                     mConversationArrayAdapter.add(mConnectedDeviceName + ":  " + readMessage);
+                    if(Constants.mode_1){
+                        boolean reDis = true;
+                        for(String s : msg_buf){
+                            if(readMessage.equals(s)){
+                                reDis = false;
+                                break;
+                            }
+                        }
+
+                        if(reDis) {
+                            msg_buf[idx] = readMessage;
+                            idx = (idx+1)%10;
+
+                            if (multiConnectThread != null) multiConnectThread = null;
+                            multiConnectThread = new MultiConnectThread(readMessage);
+                            multiConnectThread.start();
+                        }
+                    }
                     break;
                 case Constants.MESSAGE_DEVICE_NAME:
                     // save the connected device's name

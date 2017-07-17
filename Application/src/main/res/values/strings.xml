@@ -38,5 +38,6 @@
     <string name="insecure_connect">Connect a device - Insecure</string>
     <string name="discoverable">Make discoverable</string>
     <string name="mode_1">mode 1</string>
+    <string name="devices">devices</string>
 
 </resources>

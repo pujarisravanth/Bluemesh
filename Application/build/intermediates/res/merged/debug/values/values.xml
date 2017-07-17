@@ -407,6 +407,7 @@
     <string name="app_name">BluetoothChat</string>
     <string name="bt_not_enabled_leaving">Bluetooth was not enabled. Leaving Bluetooth Chat.</string>
     <string name="button_scan">Scan for devices</string>
+    <string name="devices">devices</string>
     <string name="discoverable">Make discoverable</string>
     <string name="insecure_connect">Connect a device - Insecure</string>
     <string name="intro_message">

@@ -234,7 +234,7 @@ public class DeviceListActivity extends Activity {
                     mNewDevicesArrayAdapter.add(noDevices);
                 }
 
-                Log.i(TAG,"Pinting devices : ");
+                Log.i(TAG,"Printing devices : ");
                 for(String abc: Constants.DEVICE_LIST){
                     Log.i(TAG,abc);
                 }

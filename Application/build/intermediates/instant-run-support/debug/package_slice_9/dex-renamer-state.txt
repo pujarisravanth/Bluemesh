@@ -1,0 +1,4 @@
+#Wed Jul 12 01:13:23 IST 2017
+base.0=F\:\\AndroidStudioProject\\android-BluetoothChat-master\\Application\\build\\intermediates\\transforms\\dex\\debug\\folders\\1000\\5\\slice_9
+renamed.0=classes.dex
+file.0=F\:\\AndroidStudioProject\\android-BluetoothChat-master\\Application\\build\\intermediates\\transforms\\dex\\debug\\folders\\1000\\5\\slice_9\\classes.dex

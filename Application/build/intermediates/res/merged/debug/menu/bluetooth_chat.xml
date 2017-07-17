@@ -36,4 +36,11 @@
         android:title="@string/mode_1"
         android:showAsAction="never"/>
 
+    <!--
+    <item
+        android:id="@+id/devices"
+        android:title="@string/devices"
+        android:showAsAction="never"/>
+    -->
+
 </menu>
