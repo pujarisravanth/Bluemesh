@@ -39,5 +39,6 @@
     <string name="discoverable">Make discoverable</string>
     <string name="mode_1">mode 1</string>
     <string name="devices">devices</string>
+    <string name="submit">Submit</string>
 
 </resources>

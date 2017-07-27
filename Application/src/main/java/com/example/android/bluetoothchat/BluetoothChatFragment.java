@@ -58,6 +58,7 @@ public class BluetoothChatFragment extends Fragment {
     private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
     private static final int REQUEST_ENABLE_BT = 3;
     private static final int REQUEST_DEVICE_LIST = 4;
+    private static final int CHOOSE_DEVICE_LIST = 5;
 
     // Layout Views
     private ListView mConversationView;
@@ -66,6 +67,7 @@ public class BluetoothChatFragment extends Fragment {
 
     private MultiConnectThread multiConnectThread;
     public ArrayList<String> dev_list;
+    public ArrayList<String> ch_dev_list;
     private static Handler myHandler = new Handler();
     String[] msg_buf = new String[10];
     private static int idx = 0;
@@ -252,7 +254,9 @@ public class BluetoothChatFragment extends Fragment {
                 multiConnectThread = null;
             }
 
-            for(String address : dev_list) {
+            if(!(ch_dev_list.size()>0)) ch_dev_list = dev_list;
+
+            for(String address : ch_dev_list) {
                 //String address = dev_list.get(0);
                 connectDevice(address, true);
 
@@ -370,6 +374,8 @@ public class BluetoothChatFragment extends Fragment {
                     byte[] writeBuf = (byte[]) msg.obj;
                     // construct a string from the buffer
                     String writeMessage = new String(writeBuf);
+                    msg_buf[idx] = writeMessage;
+                    idx = (idx+1)%10;
                     mConversationArrayAdapter.add("Me:  " + writeMessage);
                     break;
                 case Constants.MESSAGE_READ:
@@ -454,6 +460,14 @@ public class BluetoothChatFragment extends Fragment {
                     mChatService.connect(device, true);
                     */
                 }
+            case CHOOSE_DEVICE_LIST:
+                if (resultCode == Activity.RESULT_OK) {
+                    ch_dev_list = data.getStringArrayListExtra("ch_device list");
+                    Log.i(TAG,"After choose activity : ");
+                    for(String a : ch_dev_list){
+                        Log.i(TAG,a);
+                    }
+                }
         }
     }
 
@@ -515,6 +529,12 @@ public class BluetoothChatFragment extends Fragment {
                     startActivityForResult(serverIntent, REQUEST_DEVICE_LIST);
                 }
                 else Toast.makeText(getActivity(), "mode 1 is OFF", Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            case R.id.devices: {
+                Intent deviceIntent = new Intent(getActivity(), DeviceChooseActivity.class);
+                deviceIntent.putStringArrayListExtra("choose_device", dev_list);
+                startActivityForResult(deviceIntent, CHOOSE_DEVICE_LIST);
                 return true;
             }
         }
